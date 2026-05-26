@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>AUTRO Strategic Game v10 - B2B Edition</title>
+<style>
+  :root {
+    --bg: #0f172a; --card: #1e293b; --panel: #020617;
+    --text: #f1f5f9; --muted: #94a3b8; 
+    --accent: #38bdf8; --success: #22c55e; --danger: #ef4444; --warn: #f59e0b;      
+    --border: rgba(255,255,255,0.08);
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: radial-gradient(circle at top, #1e293b 0%, #020617 100%); color: var(--text); min-height: 100vh; }
+  .wrap { max-width: 1250px; margin: 0 auto; padding: 20px; }
+  
+  /* HEADER */
+  header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+  h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(90deg, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  
+  /* BUDGET BAR */
+  .budget-container { width: 300px; text-align: right; }
+  .budget-labels { display: flex; justify-content: space-between; font-size: 11px; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+  .budget-track { width: 100%; height: 8px; background: #334155; border-radius: 4px; overflow: hidden; }
+  .budget-fill { height: 100%; width: 0%; background: var(--success); transition: width 0.3s, background 0.3s; }
+  .budget-fill.warn { background: var(--warn); }
+  .budget-fill.over { background: var(--danger); }
+  .budget-val { font-size: 14px; font-weight: 700; color: #fff; margin-top: 4px; display: block; }
+
+  /* GRID */
+  main { display: grid; grid-template-columns: 380px 1fr; gap: 25px; }
+  @media(max-width: 950px) { main { grid-template-columns: 1fr; } }
+
+  .card { background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: flex; flex-direction: column; }
+  .card-header { font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); letter-spacing: 1px; }
+
+  /* CONTROLS */
+  .control-section { margin-bottom: 30px; }
+  .section-title { font-size: 12px; color: #fff; font-weight: 700; margin-bottom: 10px; display: flex; justify-content: space-between; }
+  
+  /* PRICE */
+  .price-control { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
+  .price-val { font-size: 32px; font-weight: 800; color: #fff; }
+  input[type=range] { width: 100%; cursor: pointer; accent-color: var(--accent); margin: 15px 0 5px; }
+  .range-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); }
+
+  /* TACTICS */
+  .tactic-grid { display: flex; flex-direction: column; gap: 8px; }
+  .tactic-card { 
+    display: flex; justify-content: space-between; align-items: center; 
+    background: rgba(255,255,255,0.03); padding: 12px 15px; border-radius: 8px; 
+    border: 1px solid transparent; transition: all 0.2s; cursor: pointer;
+  }
+  .tactic-card:hover { background: rgba(255,255,255,0.06); }
+  .tactic-card.active { background: rgba(56, 189, 248, 0.15); border-color: var(--accent); }
+  .tactic-card.disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); }
+
+  .tac-info h4 { margin: 0; font-size: 13px; color: #e2e8f0; }
+  .tac-info p { margin: 2px 0 0; font-size: 10px; color: var(--muted); }
+  .tac-cost { font-size: 11px; font-weight: 700; color: var(--warn); background: rgba(250, 204, 21, 0.1); padding: 3px 8px; border-radius: 4px; }
+
+  /* ALERT BOX */
+  .alert-box { 
+    margin-top: 15px; padding: 12px; border-radius: 6px; font-size: 11px; line-height: 1.4; display: none;
+    background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; 
+  }
+
+  /* SUBMIT BTN */
+  .btn-submit { 
+    width: 100%; padding: 16px; border: none; border-radius: 8px; 
+    background: var(--success); color: #0f172a; font-weight: 700; text-transform: uppercase; font-size: 13px; letter-spacing: 1px;
+    cursor: pointer; transition: 0.2s; margin-top: auto; 
+  }
+  .btn-submit:hover { filter: brightness(1.1); transform: translateY(-2px); }
+  .btn-submit:disabled { background: #334155; color: #64748b; cursor: not-allowed; transform: none; }
+
+  /* DASHBOARD RIGHT */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+  .kpi { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
+  .kpi span { display: block; font-size: 9px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .kpi strong { font-size: 16px; color: #fff; }
+
+  .chart-area { position: relative; height: 350px; background: var(--panel); border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; }
+  canvas { width: 100%; height: 100%; }
+  
+  .chart-legend {
+    display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; font-size: 11px; color: var(--muted);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 10px; height: 3px; border-radius: 2px; display: block; }
+
+  /* FEEDBACK RESULTS */
+  .feedback-panel { 
+    background: rgba(255,255,255,0.03); padding: 20px; border-radius: 8px; border-left: 4px solid var(--muted); 
+    color: #cbd5e1; font-size: 13px; line-height: 1.6; min-height: 100px;
+  }
+  .feedback-panel.win { border-color: var(--success); background: rgba(34, 197, 94, 0.05); }
+  .feedback-panel.lose { border-color: var(--danger); background: rgba(239, 68, 68, 0.05); }
+  
+  /* MODAL */
+  .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 99; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+  .result-modal { background: #1e293b; width: 600px; max-width: 90%; padding: 30px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); }
+  
+  .hidden { display: none !important; }
+  
+  /* RESULT TABLE */
+  .res-table { width: 100%; margin-top: 15px; border-collapse: collapse; font-size: 13px; }
+  .res-table th { text-align: left; color: var(--muted); border-bottom: 1px solid var(--border); padding: 8px; font-weight: 600; }
+  .res-table td { padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #fff; }
+  .diff-bad { color: var(--danger); font-weight: 700; }
+  .diff-good { color: var(--success); font-weight: 700; }
+  .diff-neutral { color: var(--warn); }
+
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>AUTRO <span style="font-weight:300; opacity:0.6">B2B Game</span></h1>
+    
+    <div class="budget-container">
+      <div class="budget-labels">
+        <span>Utilizado</span>
+        <span>Limite: R$ 100.000</span>
+      </div>
+      <div class="budget-track">
+        <div class="budget-fill" id="barFill"></div>
+      </div>
+      <span class="budget-val" id="lblBudget">R$ 0 / R$ 100.000</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="card-header">Cockpit de Decisão</div>
+
+      <div class="control-section">
+        <div class="section-title">1. Precificação</div>
+        <div class="price-control">
+          <span class="price-val" id="dispPrice">R$ 259</span>
+          <input type="range" id="inpPrice" min="100" max="350" step="1" value="259">
+          <div class="range-labels">
+            <span>R$ 100 (Guerra)</span>
+            <span>R$ 350 (Premium)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-section">
+        <div class="section-title">
+          2. Mix de Marketing
+          <span style="font-size:10px; opacity:0.7; font-weight:400;">Custo por Tática: R$ 50k</span>
+        </div>
+        
+        <div class="tactic-grid">
+          <div style="font-size:10px; color:var(--accent); text-transform:uppercase; margin-top:5px;">Estratégia B: Captação (Novos Clientes)</div>
+          
+          <div class="tactic-card" id="btn_trad_acq" onclick="toggle('trad_acq')">
+            <div class="tac-info">
+              <h4>Mídia de Massa (Tradicional)</h4>
+              <p>Rádio, Outdoor, Propaganda. Alto alcance.</p>
+            </div>
+            <div class="tac-cost">R$ 50.000,00</div>
+          </div>
+
+          <div class="tactic-card" id="btn_dig_acq" onclick="toggle('dig_acq')">
+            <div class="tac-info">
+              <h4>Performance Digital</h4>
+              <p>Ads, Leads, Outbound. Alta conversão.</p>
+            </div>
+            <div class="tac-cost">R$ 50.000,00</div>
+          </div>
+
+          <div style="font-size:10px; color:var(--success); text-transform:uppercase; margin-top:10px;">Estratégia C: Retenção (Fidelização B2B)</div>
+
+          <div class="tactic-card" id="btn_trad_ret" onclick="toggle('trad_ret')">
+            <div class="tac-info">
+              <h4>Incentivos (Tradicional)</h4>
+              <p>Premiações, Cashback, Bonificação.</p>
+            </div>
+            <div class="tac-cost">R$ 50.000,00</div>
+          </div>
+
+          <div class="tactic-card" id="btn_dig_ret" onclick="toggle('dig_ret')">
+            <div class="tac-info">
+              <h4>Customer Experience (Digital)</h4>
+              <p>CRM, Sucesso do Cliente, Dados.</p>
+            </div>
+            <div class="tac-cost">R$ 50.000,00</div>
+          </div>
+        </div>
+
+        <div class="alert-box" id="budgetAlert">
+          ⚠️ <b>Orçamento Excedido!</b><br>
+          Você selecionou mais de R$ 100.000. O limite é apertado.<br>
+          <i>No B2B, você deve escolher onde o dinheiro dá mais retorno.</i>
+        </div>
+        
+        <div class="alert-box" id="mixAlert" style="border-color:var(--warn); color:var(--warn); background:rgba(250, 204, 21, 0.1);">
+          ⚠️ <b>Atenção ao Foco</b><br>
+          Ao dividir o investimento, você pode não ter força suficiente para fidelizar o cliente B2B.
+        </div>
+
+      </div>
+
+      <button id="btnSubmit" class="btn-submit" onclick="calculateResult()">Validar Estratégia</button>
+    </section>
+
+    <section class="card">
+      <div class="card-header">Simulação de Mercado</div>
+
+      <div class="kpi-row">
+        <div class="kpi">
+          <span>Volume (Un)</span>
+          <strong id="outVol">0</strong>
+        </div>
+        <div class="kpi">
+          <span>Receita</span>
+          <strong id="outRev">R$ 0</strong>
+        </div>
+        <div class="kpi">
+          <span>Custo Total</span>
+          <strong id="outCost">R$ 0</strong>
+        </div>
+        <div class="kpi">
+          <span>Lucro Líquido</span>
+          <strong id="outProfit" style="color:var(--muted)">R$ 0</strong>
+        </div>
+      </div>
+
+      <div class="chart-area">
+        <canvas id="chart"></canvas>
+      </div>
+      
+      <div class="chart-legend">
+        <div class="legend-item">
+          <span class="dot" style="background:#38bdf8"></span>
+          <span>Receita Total</span>
+        </div>
+        <div class="legend-item">
+          <span class="dot" style="background:#ef4444"></span>
+          <span>Custos Totais (Fixo + Var)</span>
+        </div>
+        <div class="legend-item">
+          <span class="dot" style="background:#facc15"></span>
+          <span>Ponto de Equilíbrio</span>
+        </div>
+      </div>
+
+      <div class="feedback-panel" id="feedback">
+        <strong style="color:#fff; display:block; margin-bottom:5px;">Aguardando Decisão...</strong>
+        Configure o Preço e o Mix de Marketing. <br>
+        O sistema analisará a eficácia no mercado B2B (Foco em Recorrência).
+      </div>
+    </section>
+  </main>
+
+  <div id="resultModal" class="overlay hidden">
+    <div class="result-modal">
+      <div style="text-align:center; margin-bottom:20px;">
+        <div id="finalScoreTitle" style="font-size:24px; font-weight:800; color:#fff; margin-bottom:5px;">RESULTADO DA DECISÃO</div>
+        <div id="finalScoreVal" style="font-size:14px; color:var(--muted);">Score: 0/100</div>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; margin-bottom:20px;">
+        <h3 style="margin:0 0 10px 0; font-size:14px; color:var(--accent);">ANÁLISE DO CEO:</h3>
+        <p id="modalFeedback" style="font-size:13px; color:#cbd5e1; line-height:1.5; margin:0;"></p>
+      </div>
+
+      <table class="res-table">
+        <thead>
+          <tr>
+            <th>Indicador</th>
+            <th>Sua Decisão</th>
+            <th>Benchmark B2B</th>
+            <th>Diagnóstico</th>
+          </tr>
+        </thead>
+        <tbody id="modalTableBody">
+          </tbody>
+      </table>
+
+      <button class="btn-submit" onclick="closeModal()" style="margin-top:20px;">Ajustar Estratégia</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // === CONFIGURAÇÃO RÍGIDA ===
+  const BUDGET_LIMIT = 100000; // PADRONIZADO PARA 100k
+  const TACTIC_PRICE = 50000;  // PADRONIZADO PARA 50k (Para usar 2 táticas)
+  
+  const CONST = {
+    A: 6800, B: 18, CF: 100000, CVU: 85
+  };
+
+  let state = {
+    price: 259,
+    selected: [] 
+  };
+
+  // === UI ELEMENTS ===
+  const el = {
+    priceIn: document.getElementById('inpPrice'),
+    priceDisp: document.getElementById('dispPrice'),
+    barFill: document.getElementById('barFill'),
+    lblBudget: document.getElementById('lblBudget'),
+    alert: document.getElementById('budgetAlert'),
+    mixAlert: document.getElementById('mixAlert'),
+    btn: document.getElementById('btnSubmit'),
+    feedback: document.getElementById('feedback'),
+    chart: document.getElementById('chart'),
+    kpis: {
+      vol: document.getElementById('outVol'),
+      rev: document.getElementById('outRev'),
+      cost: document.getElementById('outCost'),
+      prof: document.getElementById('outProfit')
+    },
+    modal: document.getElementById('resultModal'),
+    modalFeedback: document.getElementById('modalFeedback'),
+    modalTable: document.getElementById('modalTableBody'),
+    scoreTitle: document.getElementById('finalScoreTitle'),
+    scoreVal: document.getElementById('finalScoreVal')
+  };
+
+  // === INTERACTION ===
+  function toggle(id) {
+    if(state.selected.includes(id)) {
+      state.selected = state.selected.filter(x => x !== id);
+    } else {
+      state.selected.push(id);
+    }
+    updateUI();
+  }
+
+  function updateUI() {
+    state.price = parseInt(el.priceIn.value);
+    el.priceDisp.innerText = fmtMoney(state.price);
+
+    let used = state.selected.length * TACTIC_PRICE;
+    let pct = (used / BUDGET_LIMIT) * 100;
+    
+    // ATUALIZADO DISPLAY DE TEXTO DO BUDGET
+    el.lblBudget.innerText = `${fmtMoney(used)} / ${fmtMoney(BUDGET_LIMIT)}`;
+    el.barFill.style.width = Math.min(pct, 100) + "%";
+    
+    ['trad_acq', 'dig_acq', 'trad_ret', 'dig_ret'].forEach(id => {
+      let div = document.getElementById('btn_' + id);
+      if(state.selected.includes(id)) div.classList.add('active');
+      else div.classList.remove('active');
+    });
+
+    let isOver = used > BUDGET_LIMIT;
+    let hasAcq = state.selected.some(x => x.includes('acq'));
+    let hasRet = state.selected.some(x => x.includes('ret'));
+    let isMixed = hasAcq && hasRet; 
+
+    if(isOver) {
+      el.barFill.className = "budget-fill over";
+      el.alert.style.display = "block";
+      el.btn.disabled = true;
+      el.btn.innerText = "Orçamento Excedido (> 100k)";
+    } else {
+      el.barFill.className = pct > 80 ? "budget-fill warn" : "budget-fill";
+      el.alert.style.display = "none";
+      el.btn.disabled = false;
+      el.btn.innerText = "Validar Estratégia";
+    }
+
+    el.mixAlert.style.display = (isMixed && !isOver) ? "block" : "none";
+
+    drawChart(simulate(false));
+  }
+
+  // === CORE ENGINE ===
+  function simulate(applyPenalties) {
+    let P = state.price;
+    let a = CONST.A;
+    let b = CONST.B;
+    let cf_mkt = state.selected.length * TACTIC_PRICE;
+    
+    let boostA = 0; 
+    let boostB = 0; 
+    
+    // Tactic Impacts - AJUSTADO PARA LÓGICA B2B (Retenção > Propaganda)
+    // A estratégia C (Retenção) agora reduz muito a sensibilidade a preço (fidelidade).
+    
+    if(state.selected.includes('trad_acq')) boostA += 0.15; // Propaganda Tradicional
+    if(state.selected.includes('dig_acq'))  boostA += 0.20; // Propaganda Digital
+    
+    // B2B BOOST: Retenção tem pesos maiores pois 60% da venda é recorrente
+    if(state.selected.includes('trad_ret')) boostB += 0.35; // Incentivos
+    if(state.selected.includes('dig_ret'))  boostB += 0.40; // CX / CRM
+
+    // === REGRAS DE PENALIDADE E COERÊNCIA ===
+    let hasAcq = state.selected.some(x => x.includes('acq'));
+    let hasRet = state.selected.some(x => x.includes('ret'));
+    
+    // Regra B2B: Se você não investir NADA em retenção, perde vendas futuras.
+    if (!hasRet && applyPenalties) {
+        // Penalidade severa por ignorar a recorrência do Tiagão
+        boostA *= 0.5; // A propaganda traz cliente, mas ele sai rápido.
+    }
+
+    // Calculo de demanda linear: Q = a - bP
+    let final_a = a * (1 + boostA);
+    let final_b = b * (1 - boostB); // boostB diminui a inclinação (cliente menos sensível)
+
+    let Q = Math.max(0, final_a - (final_b * P));
+    let Rev = P * Q;
+    let CostFixed = CONST.CF + cf_mkt;
+    let CostVar = CONST.CVU * Q;
+    let Profit = Rev - (CostFixed + CostVar);
+    let BEP = (P - CONST.CVU) > 0 ? CostFixed / (P - CONST.CVU) : 0;
+
+    return { P, Q, Rev, Profit, TotalCost: CostFixed + CostVar, BEP, IsMixed: (hasAcq && hasRet), HasRet: hasRet };
+  }
+
+  // === RESULT HANDLER ===
+  function calculateResult() {
+    let res = simulate(true);
+    
+    // Benchmark (Gabarito B2B)
+    // O Ideal agora é focar PESADO na Retenção (Estratégia C) pois o Budget é 100k.
+    const bench = simulateBench();
+    
+    // KPI Updates
+    el.kpis.vol.innerText = Math.round(res.Q).toLocaleString('pt-BR');
+    el.kpis.rev.innerText = fmtMoney(res.Rev);
+    el.kpis.cost.innerText = fmtMoney(res.TotalCost);
+    el.kpis.prof.innerText = fmtMoney(res.Profit);
+    el.kpis.prof.style.color = res.Profit > 0 ? "var(--success)" : "var(--danger)";
+
+    // Feedback Generation Logic
+    let analysis = "";
+    let scoreVal = 0;
+
+    // Calcular Score 0-100
+    // Compara lucro com o benchmark de alta retenção
+    if(res.Profit > 0) scoreVal = Math.round((res.Profit / bench.Profit) * 100);
+    scoreVal = Math.min(100, Math.max(0, scoreVal));
+
+    if (res.Profit < 0) {
+      analysis = "❌ <b>PREJUÍZO:</b> A conta não fechou. ";
+      if(!res.HasRet) analysis += "Você investiu apenas em Propaganda (Aquisição). No mercado B2B, a 'Venda Recorrente' é vital. Sem retenção, o custo de trazer clientes novos comeu sua margem.";
+      else analysis += "Sua estrutura de custos ficou muito alta para o preço cobrado.";
+      el.scoreTitle.innerText = "ESTRATÉGIA FRÁGIL";
+      el.scoreTitle.style.color = "var(--danger)";
+    
+    } else if (scoreVal < 70) {
+      analysis = "⚠️ <b>RESULTADO MEDIANO:</b> Você teve lucro, mas ignorou o potencial da base instalada. Lembre-se da dica: 60% das vendas no B2B vêm de clientes atuais. Invista mais na Estratégia C do que na B.";
+      el.scoreTitle.innerText = "PODE MELHORAR";
+      el.scoreTitle.style.color = "var(--warn)";
+    
+    } else if (scoreVal >= 90) {
+      analysis = "🏆 <b>MESTRE DO B2B:</b> Parabéns! Você entendeu que no B2B, a retenção (Estratégia C) é a chave do lucro. Ao fidelizar o cliente, você reduziu a sensibilidade a preço e garantiu a recorrência.";
+      el.scoreTitle.innerText = "ESTRATÉGIA VENCEDORA";
+      el.scoreTitle.style.color = "var(--success)";
+    
+    } else {
+      analysis = "✅ <b>BOM RESULTADO:</b> Estratégia sólida. Para chegar aos 100 pontos, verifique se você não está gastando muito com 'Propaganda' quando deveria estar investindo em 'Relacionamento'.";
+      el.scoreTitle.innerText = "RESULTADO POSITIVO";
+      el.scoreTitle.style.color = "var(--accent)";
+    }
+
+    el.scoreVal.innerText = "Score B2B: " + scoreVal + "/100";
+    el.modalFeedback.innerHTML = analysis;
+
+    // Build Table Rows
+    const tbody = document.getElementById('modalTableBody');
+    tbody.innerHTML = `
+      <tr>
+        <td>Preço Médio</td>
+        <td>${fmtMoney(res.P)}</td>
+        <td>${fmtMoney(bench.P)}</td>
+        <td class="${getDiffClass(res.P, bench.P, 15)}">${getDiffLabel(res.P, bench.P, 15)}</td>
+      </tr>
+      <tr>
+        <td>Lucro Líquido</td>
+        <td>${fmtMoney(res.Profit)}</td>
+        <td>${fmtMoney(bench.Profit)}</td>
+        <td class="${res.Profit >= bench.Profit*0.9 ? 'diff-good' : 'diff-bad'}">${res.Profit >= bench.Profit*0.9 ? 'Ótimo' : 'Abaixo'}</td>
+      </tr>
+    `;
+
+    el.modal.classList.remove('hidden');
+    drawChart(res);
+  }
+
+  function closeModal() { el.modal.classList.add('hidden'); }
+
+  // BENCHMARK: O GABARITO (Investir mais em C do que em B)
+  // Cenário Ideal: 2 Cartas de Retenção (100k) ou Mix com foco em C
+  function simulateBench() {
+    let a = CONST.A; 
+    let b = CONST.B;
+    // Simula investir em Dig Ret + Trad Ret (Foco Total em Recorrência)
+    // Isso dá boostB massive (0.35 + 0.40 = 0.75)
+    let boostB = 0.75; 
+    
+    let P = 280; // Com alta fidelidade, cobra-se mais
+    let final_a = a; 
+    let final_b = b * (1 - boostB);
+    
+    let Q = Math.max(0, final_a - (final_b * P));
+    let cost = CONST.CF + 100000 + (CONST.CVU * Q); // 100k budget full (Padronizado)
+    let prof = (P*Q) - cost;
+    return { P, Q, Profit: prof };
+  }
+
+  function getDiffClass(u, b, tol) { return Math.abs(u-b) <= tol ? 'diff-good' : 'diff-neutral'; }
+  function getDiffLabel(u, b, tol) { 
+    if(Math.abs(u-b) <= tol) return "Ideal";
+    return u > b ? "Alto" : "Baixo"; 
+  }
+
+  // === CHART ===
+  function drawChart(d) {
+    const ctx = el.chart.getContext('2d');
+    const W = el.chart.width = el.chart.offsetWidth;
+    const H = el.chart.height = el.chart.offsetHeight;
+
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = "#020617"; ctx.fillRect(0,0,W,H);
+
+    const MAX_Q = 8000;
+    const MAX_Y = 2500000;
+    const p = {l: 40, b: 20, t: 10, r: 10};
+    
+    const sX = v => p.l + (v/MAX_Q)*(W-p.l-p.r);
+    const sY = v => (H-p.b) - (v/MAX_Y)*(H-p.b-p.t);
+
+    ctx.strokeStyle = "#334155"; ctx.lineWidth = 1; ctx.beginPath();
+    ctx.moveTo(p.l, p.t); ctx.lineTo(p.l, H-p.b); ctx.lineTo(W-p.r, H-p.b); ctx.stroke();
+
+    let yCF = sY(d.TotalCost - (CONST.CVU * d.Q));
+    ctx.strokeStyle = "#64748b"; ctx.setLineDash([4,4]); ctx.beginPath();
+    ctx.moveTo(p.l, yCF); ctx.lineTo(W-p.r, yCF); ctx.stroke(); ctx.setLineDash([]);
+
+    // Linha Vermelha (Custos Totais)
+    let yCT = sY(d.TotalCost);
+    ctx.strokeStyle = "#ef4444"; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.moveTo(p.l, yCF); ctx.lineTo(sX(d.Q*1.2), sY(d.TotalCost + (CONST.CVU * d.Q * 0.2))); ctx.stroke();
+
+    // Linha Azul (Receitas)
+    let yRev = sY(d.Rev);
+    ctx.strokeStyle = "#38bdf8"; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.moveTo(p.l, sY(0)); ctx.lineTo(sX(d.Q*1.2), sY(d.P * d.Q * 1.2)); ctx.stroke();
+
+    if(d.BEP > 0 && d.BEP < MAX_Q) {
+      ctx.fillStyle = "#facc15"; ctx.beginPath();
+      ctx.arc(sX(d.BEP), sY((d.TotalCost - CONST.CVU*d.Q) + CONST.CVU*d.BEP), 5, 0, Math.PI*2); ctx.fill();
+    }
+  }
+
+  function fmtMoney(v) { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0}); }
+
+  el.priceIn.addEventListener('input', updateUI);
+  updateUI();
+
+</script>
+</body>
+</html>
